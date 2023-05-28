@@ -82,13 +82,13 @@ This log likelihood looks rather complex. Let's analyze its behavior by computin
 <center>
 $$
 \begin{align}
-\nabla_{\theta}L(\theta) &= \nabla_{\theta}\log \hat{P}_{\theta}(\tau_a) - \mathbb{E}_{\overline{P}(c=\tau|s, \theta)}\left[\nabla_{\theta}\log \hat{P}_{\theta}(\tau)\right] \\
-&= \nabla_{\theta}\log \hat{P}_{\theta}(\tau_a) - \left[\overline{P}(c=\tau_a|s; \theta)\nabla_{\theta}\log \hat{P}_{\theta}(\tau_a) + \overline{P}(c=\tau_b|s; \theta)\nabla_{\theta}\log \hat{P}_{\theta}(\tau_b)\right] \\
-&= \overline{P}(c=\tau_b|s; \theta)\left[\nabla_{\theta}\log \hat{P}_{\theta}(\tau_a) - \nabla_{\theta}\log \hat{P}_{\theta}(\tau_b)\right]
+\nabla_{\theta}L(\theta) &= \nabla_{\theta}\log \hat{P}_{\theta}(\tau_a) - \mathbb{E}_{\overline{P}(c=\tau|x, \theta)}\left[\nabla_{\theta}\log \hat{P}_{\theta}(\tau)\right] \\
+&= \nabla_{\theta}\log \hat{P}_{\theta}(\tau_a) - \left[\overline{P}(c=\tau_a|x; \theta)\nabla_{\theta}\log \hat{P}_{\theta}(\tau_a) + \overline{P}(c=\tau_b|x; \theta)\nabla_{\theta}\log \hat{P}_{\theta}(\tau_b)\right] \\
+&= \overline{P}(c=\tau_b|x; \theta)\left[\nabla_{\theta}\log \hat{P}_{\theta}(\tau_a) - \nabla_{\theta}\log \hat{P}_{\theta}(\tau_b)\right]
 \end{align}
 $$
 </center>
-where the overline $$\overline{P}$$ denotes stop gradient. Here, $$\overline{P}(c|s; \theta)$$ is the model's current choice over the two trajectories. 
+where the overline $$\overline{P}$$ denotes stop gradient. Here, $$\overline{P}(c|x; \theta)$$ is the model's current choice over the two trajectories. 
 
 We see that, in general, if $$\tau_a$$ is selected as the better one, then the model would maximize the likelihood of $$\tau_a$$, with respect to both $$R_{\theta}$$ and $$\hat{P}_{\theta}$$, and minimize the likelihood of $$\tau_b$$. However, such an opposite maximum likelihood estimation problem is weighted by the current probability of choosing the undesired trajectory. Assuming in the beginning of the optimization process, the model has no preference and thus the choice probability on the two trajectories are evenly divided, then we are simply multiplying the opposite maximum likelihood problem by a factor of 0.5. On the opposite end, let's assume that the model has learned to strongly prefer $$\tau_a$$ towards the end of the optimization process, then there are two consequences. The log likelihood of $$\tau_b$$ under the model should be very small, and the model's probability for choosing $$\tau_b$$ should also be very small. In this case, the model stop optimizing for anything, because of the zero-weighting in front. 
 
