@@ -4,4 +4,8 @@ title: About
 permalink: /about/
 ---
 
-Hi! My name is Ran. I am a PhD student in Human-Computer Interaction. I will use this blog to document my personal learning of machine learning, data science, optimization, and perhaps robotics. I intend these posts to be nonstandard - unlike your top Google search results, but useful when you feel like you couldn't find what you are looking for. 
+Welcome to LatentObservations! 
+
+This blog is dedicated to a wide range of topics in data science, machine learning, optimization, cognitive science, human-computer interaction, among others, which I consider as not mainstream or obvious. In other words, these **observations** are **latent**, and thus the name of the blog. I hope the posts are as paradoxical and non-orthodox as the blog name and in the end a bit enlightening. 
+
+The posts will be constantly updated, so don't stress out if there is any error. Please find my contact below if you like the posts, have comments, questions, suggestions, or simply want to chat and connect. 

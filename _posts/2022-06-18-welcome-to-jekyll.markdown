@@ -1,9 +1,17 @@
 ---
 layout: post
-title:  "First post"
-date:   2022-06-18 15:59:54 -0500
+title:  "Dummy First Post"
+date:   2022-06-18 00:00:00 -0000
 # categories: jekyll update
 ---
+<!-- Active inference is an agent modeling framework born out of theoretical neuroscience in the mid to late 2000s. 
+
+$$
+\begin{align}
+y &= kx + b \\
+y &= kx + b \\
+\end{align}
+$$ -->
 
 <!-- The goal of this article is to add some extra info
 about blog writing with _Jekyll_.
