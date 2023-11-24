@@ -141,7 +141,7 @@ Plugging back to the previous equation, we have:
 <center>
 $$
 \begin{align}
-\nabla\mathcal{L}(\theta) &= \mathbb{E}_{\pi(\mu)}[\nabla\log Q_{\theta}(x_{t+1}|\mu) + \nabla\log Q_{\theta}(x_t|\mu) + \log b(\mu)] - \mathbb{E}_{\pi'(\mu)}[\log Q_{\theta}(x_t|\mu) + \log b(\mu)] \\
+\nabla\mathcal{L}(\theta) &= \mathbb{E}_{\pi(\mu)}[\nabla\log Q_{\theta}(x_{t+1}|\mu) + \nabla\log Q_{\theta}(x_t|\mu) + \log b(\mu)] - \mathbb{E}_{\pi'(\mu)}[\nabla\log Q_{\theta}(x_t|\mu) + \log b(\mu)] \\
 &= \mathbb{E}_{b_{\theta}(\mu|x_{t+1}, x_t)}[\nabla\log Q_{\theta}(x_{t+1}|\mu)] \\
 &\quad + \sum_{\mu}\underbrace{\left(b_{\theta}(\mu|x_{t+1}, x_t) - b_{\theta}(\mu|x_t)\right)}_{\approx 0}\nabla\log Q_{\theta}(x_t|\mu) \\
 &\quad + \sum_{\mu}\underbrace{\left(b_{\theta}(\mu|x_{t+1}, x_t) - b_{\theta}(\mu|x_t)\right)}_{\approx 0}\log b(\mu)
