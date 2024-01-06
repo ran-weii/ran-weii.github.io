@@ -1,10 +1,8 @@
 ---
 layout: post
-title:  "Rationalizing Expected Free Energy"
+title:  "Another Attempt to Rationalize Expected Free Energy: Insights From Reinforcement Learning"
 date:   2023-09-07 00:00:00 -0000
 ---
-
-# Another attempt to rationalize Expected Free Energy: Insights from Reinforcement Learning
 
 Expected Free Energy (EFE) is at the core of active inference and the key differentiator between active inference and purely reward-driven agent modeling frameworks (e.g., reinforcement learning). For the optimization-savvy, EFE can be seen as an objective function optimized by active inference agents, similar to the expected utility objective which is optimized by RL agents. For Bayesians, EFE can be seen as a particular choice of prior on agent behavior. However, which view lies closer to the spirit of the active inference founders? 
 
