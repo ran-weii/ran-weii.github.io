@@ -1,38 +1,32 @@
 ---
 layout: post
-title:  "Introduction to Active Inference"
+title:  "Making Sense of Active Inference: Optimal Control Without Cost Function"
 date:   2023-07-30 00:00:00 -0000
 ---
 
-# Read Between The Lines of Active Inference
-
-Here is my attempt to introduce the mechanics of active inference, a framework for modeling and understanding sentient agents originated from neuroscience. My main interest will be centered on active inference's ambition to unify perception and control under the same optimization objective. As explained below, a unified objective likely has many advantages, including simpler agent design and better performance. 
-
-The active inference literature is not very reader-friendly, especially to people new to the area. This post is the product of me reading a handful of active inference papers without any guidance or consultation; thus "read between the lines". A lot of the contents here are taken from my thesis (which hopefully will be published by the university soon) and previously published open-source materials (see end of post). Any feedback or discussion is highly appreciated (please find my contact at the bottom). 
+Here is my attempt to introduce the mechanics of active inference, a framework for modeling and understanding sentient agents originated in neuroscience. My main interest will be centered on active inference's approach to unify perception and control under the same optimization objective. As we will explain below, a unified objective likely has many advantages, including simpler agent design and better performance. We will see that active inference approaches the unified objective from a very perception-centric perspective rather than a control-centric perspective, which is itself a recent movement in reinforcement learning and optimal control. 
 
 ## Why unify perception and control?
 
-We will consider agents that build an explicit model of the environment and behave in a way such that a reward function is optimized (a.k.a., model-based reinforcement learning agent). Perception can be understood as making predictions about the future states of the environment. 
+We will consider agents that build an explicit model of the environment and behave in a way such that a reward function is optimized (a.k.a., model-based reinforcement learning; MBRL). Perception can be understood as making predictions about the future states of the environment. 
 
-The traditional recipe for building such agents is to let them interact with the environment and collect data, optimize the predictive accuracy of the model, and use the model to plan sequences of reward-maximizing actions. As the model becomes more accurate, the agent's ability to achieve high reward should increase correspondingly. 
+The traditional recipe for building such agents is to let them interact with the environment and collect data, optimize the predictive accuracy of the model, and use the model to plan sequences of reward-maximizing actions. As the model becomes more accurate, the agent's ability to achieve high rewards should increase correspondingly. 
 
-Unfortunately, a recent paper titled [Objective Mismatch in Model-based Reinforcement Learning](https://arxiv.org/abs/2002.04523) found that the correspondence between model accuracy and achieved rewards is often violated in practice, if not non-existent at all. There are numerous ways why this could be the case. For example, in model-base RL, there is a well-known phenomenon that inaccuracies in the model (due to overfitting to training data and lack of generalization on out-of-distribution data) tends to be exploited by the planner, which has been studied extensively (for example, see [When to Trust Your Model](https://arxiv.org/abs/1906.08253)). Model exploitation can lead to premature convergence, but more often catastrophic failure. The bottom line here is that the conflict arises because **the model is not trained for how it is supposed to be used**: making decisions. 
+Unfortunately, a recent paper titled [Objective Mismatch in Model-based Reinforcement Learning](https://arxiv.org/abs/2002.04523) found that the correspondence between model accuracy and achieved rewards is often violated in practice, if not non-existent at all. There are numerous ways why this could be the case. For example, in model-base RL, there is a well-known phenomenon that inaccuracies in the model (due to overfitting on training data and lack of regularization on out-of-distribution data) tends to be exploited by the planner, which has been studied extensively (for example, see [When to Trust Your Model](https://arxiv.org/abs/1906.08253)). Model exploitation can lead to premature convergence, but more often catastrophic failure. The bottom line here is that the conflict arises because **the model is not trained for how it is supposed to be used: optimizing rewards**. 
 
-There is thus increasing interests in developing *decision-aware* model training objectives. [Value-aware](https://proceedings.mlr.press/v54/farahmand17a.html) and [value-equivalent](https://arxiv.org/abs/2011.03506) methods attempt to optimize the model such that it yields the same Bellman backup as data sampled from the environment. The set of models that satisfy value-equivalence shrinks for increasingly larger sets of policies and values and eventually collapse to the true model given sufficient capacity. [Control-as-inference](https://arxiv.org/abs/2006.05443) inspired approaches suggest that the model should be trained optimistically to favor high observed value. Overall, it does not seem we are close to settling the debate on a proper objective for model training.
-
-*Wouldn't it be nice if the model and the planner just optimize the same objective?*
+To better understand and address the objective mismatch problem, a subfield has emerged within the MBRL community called **decision-aware MBRL** which aims to develop unified objective functions for model learning and action selection so that they are aware of each other's role in the optimization process. In a [recent survey](https://arxiv.org/abs/2310.06253), we studied all existing decision-aware MBRL approaches and found that these unified objective functions are developed based on the principle of either better estimating or directly optimizing rewards with respect to a pair of model and action selection policy. Notable approaches include *value-prediction* which trains the model to predict values (cumulative rewards) instead of environment observations (e.g., see [this paper](https://arxiv.org/abs/2011.03506)) and *distribution correction* which corrects for model error in reward estimation or optimization (e.g., see [this paper](https://arxiv.org/abs/2110.02758)). Experimental results have shown increased robustness of agents trained with these unified objective functions to model misspecification, distracting observations, and other perceptual challenges. But it's clear that these approaches are very control-centric, **models are developed solely for the purpose of control**. 
 
 ## A handwavy introduction of active inference
 
 Active inference can be seen as a way to develop agent objectives using ideas from the [Free Energy Principle](https://www.nature.com/articles/nrn2787) (FEP). The FEP roughly states that the agent has a probabilistic model of the sensory observations it is supposed to receive; both perception and control should gather evidence for the probabilistic model (i.e., maximize its likelihood). 
 
-The FEP is often brought up at the same time with [predictive processing](https://en.wikipedia.org/wiki/Predictive_coding#:~:text=In%20neuroscience%2C%20predictive%20coding%20). In the RL context, predictive processing can be understood as the idea that both perception and control should suppress prediction error, where perception achieves this objective by building a better model of the environment, control achieves this objective by changing the environment such that environment-generated signals are better predicted by the model. Under this view, perception and control work towards the same goal: **minimize prediction error**.
+The FEP is often brought up at the same time with [predictive processing](https://en.wikipedia.org/wiki/Predictive_coding#:~:text=In%20neuroscience%2C%20predictive%20coding%20). In the RL context, predictive processing can be understood as the idea that both perception and control should suppress prediction error, where perception achieves this objective by building a better model of the environment, control achieves this objective by changing the environment such that environment-generated signals are better predicted by the model. Under this view, **perception and control work towards the same goal: minimize prediction error**. In contrast to the control-centric approach to unified objectives in RL, models are developed for the purpose of prediction, and so is control. 
 
-There are solid [cognitive](https://journals.sagepub.com/doi/full/10.1177/1059712319862774) and [neuroscience](https://www.sciencedirect.com/science/article/pii/S0896627311009305) motivations for active inference over utility-maximizing optimal control, mostly claiming advantages of active inference in agents with limited information storage and processing capacity. For example, in a paper titled [Nonmodular Architecture of Cognitive Systems Based On Active Inference](https://arxiv.org/abs/1903.09542), the authors found that an active inference controller is robust to model misspecification. 
+There are solid [cognitive](https://journals.sagepub.com/doi/full/10.1177/1059712319862774) and [neuroscience](https://www.sciencedirect.com/science/article/pii/S0896627311009305) motivations for this perception-centric view of active inference over utility-maximizing optimal control, mostly claiming advantages of active inference in agents with limited information storage and processing capacity. For example, in a paper titled [Nonmodular Architecture of Cognitive Systems Based On Active Inference](https://arxiv.org/abs/1903.09542), the authors found that an active inference controller is robust to model misspecification. 
 
 Most relevant to the present discussion is a paper titled [Learning Action-oriented Models Through Active Inference](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007805), where the authors showed that an active inference agent with a misspecified model succeeds at a task while learning model parameters that deviate significantly from the actual environment statistics. And if the agent were to accurately capture the environment statistics in this setting, it would not solve the task. Furthermore, the parameters learned by the active inference agent are optimistic in the sense that the learned transition dynamics is biased towards solving the task. 
 
-Lastly, it should be noted that active inference has gone through drastic changes over the years and I think its formulation is still not fully settled (see [this paper](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1008420) on active inference and different kinds of free energy). Aside from the theories, there are increasing efforts on [integration with deep reinforcement learning](https://arxiv.org/abs/2207.06415). 
+Despite these promising results, how to properly formulate perception and control as prediction error minimization has been an active research effort: active inference formulations have gone through drastic changes over the years and I think it is still not fully settled (see [this paper](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1008420) on active inference and different kinds of free energy).  
 
 I will unpack two versions of active inference in detail, an old and a new one, to illustrate the conceptual underpinning. 
 
@@ -44,7 +38,7 @@ In partially observable Markov decision process (POMDP), we model the environmen
 
 The most established approach to planning in POMDP is based on performing backward dynamic programming in the belief space. Basically, the planner tries to think about **"given that I believe the environment is in a certain state, what will my next belief be under the POMDP model of the environment, and what value is associated with that belief"**. At every time step of interaction with the environment, the agent first updates its belief about the environment (e.g., using a Kalman filter), and then uses the updated belief to find the optimal plan. 
 
-Active inference tries to formulate both the belief update and the planning process as inference or prediction (i.e., inference about the future). Similar to the optimal control formulation, the agent knows that observations are sampled from $$P(o_t\vert s_t)$$. However, the active inference agent models the environment transitions as $$P(s_{t+1}\vert s_t)$$, *eschewing the action variable in the optimal control formulation*. 
+Active inference tries to formulate both the belief update and the planning process as inference or prediction (i.e., inference about the future). Similar to the optimal control formulation, the agent knows that observations are sampled from $$P(o_t\vert s_t)$$. However, the active inference agent models the environment transitions as $$P(s_{t+1}\vert s_t)$$, **eschewing the action variable in the optimal control formulation**. 
 
 To be more precise, this paper considers solving episodic tasks with a maximum of $$T$$ time steps. The agent explicitly represents the hidden states at all time steps, and observations until the current time step $$\tau$$. The probabilistic model is defined as follows:
 <center>
@@ -152,6 +146,10 @@ $$
 </center>
 which is simply saying **let's find an action such that the next predicted observation coincide with the one that would be generated by the optimal policy.**
 
+![](/assets/2023-07-30-active-inference-introduction/optimal_control_without_cost.png)
+
+An illustration of optimal control as observation inference (2012) and optimal control as prior inference (2015), which we will unpack below.
+
 ## Modern active inference
 
 In 2015, a paper titled [Active Inference And Epistemic Value](https://www.tandfonline.com/doi/full/10.1080/17588928.2015.1020053) marks the beginning of a new era for active inference, where the ability to handle epistemic uncertainty is claimed as a central property and a natural consequence of active inference. This new version was later refined in a paper titled [Active Inference: A Process Theory](https://direct.mit.edu/neco/article/29/1/1/8207/Active-Inference-A-Process-Theory) and the most updated version (the modern version) of active inference was comprehensively reviewed in [this paper](https://www.sciencedirect.com/science/article/pii/S0022249620300857) (highly recommended). 
@@ -206,6 +204,8 @@ $$
 </center>
 Thus, the posterior is simply a minor modification of the prior based on which action sequence likely generated the observed signals. If we assume the dynamics model fits the data well so that $$\mathcal{F} \approx 0$$, then we can see that the prior is doing the majority of the heavy-lifting.
 
+### Control prior design choices
+
 The choice of the EFE prior is usually justified as **"a free energy minimizing agent should a priori believe they will choose actions that minimize free energy"**. Note, however, the "probabilistic model" $$\tilde{P}(o_{\tau+1:T}, s_{\tau+1:T}\vert \pi)$$ in the EFE prior is not necessarily the same as the probabilistic model used to perform state estimation. There are thus many design decisions in defining $$\tilde{P}$$. 
 
 We can definitely choose them to be the same: $$\tilde{P}(o_{\tau+1:T}, s_{\tau+1:T}\vert \pi) = \prod_{t=\tau+1}^{T}P(o_t\vert s_t)Q^*(s_t\vert \pi)$$. Then the EFE becomes:
@@ -254,7 +254,7 @@ $$
 \end{align}
 $$
 </center>
-where the last line is obtained by dropping the second term in the second line, because KL divergence is non-negative. This gives us the well-known pragmatic-epistemic value decomposition. But note that it is a *bound* on the EFE and not the EFE itself as defined in the prior. 
+where the last line is obtained by dropping the second term in the second line, because KL divergence is non-negative. This gives us the well-known pragmatic-epistemic value decomposition. But note that it is a **bound** on the EFE and not the EFE itself as defined in the prior. 
 
 If we care doing a quick manipulation on the epistemic value as follows:
 <center>
@@ -280,12 +280,75 @@ This gives us a risk-ambiguity decomposition in the observation space.
 
 Overall, this exercise suggests that whether an active inference will perform well on an actual (reward-seeking) task depends on whether the designer can specify a good prior for the task. 
 
+### Connections to optimal control *without* cost function
+
+A salient question at this point is **whether modern active inference has lost its root of "optimal control without cost function"**. 
+
+To see the connection, let's modify the generative model slightly into the following factorized format:
+<center>
+$$
+P(o_{1:\tau}, s_{1:T}, a_{1:T}) = \prod_{t=1}^{\tau}P(o_t|s_t)\prod_{t=1}^{T}P(s_t|s_{t-1}, a_{t-1})\pi(a_t|s_t)
+$$
+</center>
+where $$P(s_1|s_0, a_0) = P(s_1)$$. We will correspondingly modify the belief distribution as $$Q(s_{1:T}, a_{1:T}) = \prod_{t=1}^{T}Q(s_t)Q(a_t|s_t)$$. The free energy function is defined as:
+<center>
+$$
+\begin{align}
+\mathcal{F}(o_{1:\tau}, Q) &= \mathbb{E}_{Q}[\log Q(s_{1:T}, a_{1:T}) - \log P(o_{1:\tau}, s_{1:T}, a_{1:T})] \\
+&= \sum_{t=1}^{T}\mathbb{E}_{Q}[\log Q(s_t) + \log Q(a_t|s_t) - \log P(o_t, s_t|s_{t-1}, a_{t-1}) - \log \pi(a_t|s_t)] \\
+&= \sum_{t=1}^{T}\mathbb{E}_{Q}[D_{KL}[Q(a_t|s_t)||\pi(a_t|s_t)]] + \mathbb{E}_{Q}[\log Q(s_t) - \log P(o_t, s_t|s_{t-1}, a_{t-1})]\\
+&\triangleq \sum_{t=1}^{T} \mathbb{E}_{Q(s_t)}[D_{KL}[Q(a_t|s_t)||\pi(a_t|s_t)]] + \mathbb{E}_{Q(s_{t-1}, a_{t-1})}[\mathcal{F}(o_{t}, Q|a_{t-1})]
+\end{align}
+$$
+</center>
+where for $$t > \tau$$, $$o_t$$ does not exist.
+
+**Perception as hidden state inference:**  It's easy to see that the optimal state estimates remain as approximate Bayesian posteriors:
+<center>
+$$
+Q^*(s_t) \propto \left\{\begin{array}{ll}\exp\left(\mathbb{E}_{Q^*(s_{t-1}, a_{t-1})}[\log P(o_t, s_t|s_{t-1}, a_{t-1})] + c_1\right) & t \leq \tau \\ \exp\left(\mathbb{E}_{Q^*(s_{t-1}, a_{t-1})}[\log P(s_t|s_{t-1}, a_{t-1})] + c_2\right) & t > \tau \end{array}\right.
+$$
+</center>
+**Control as prior inference:** Defining a similar notion of EFE for this factorized generative model:
+<center>
+$$
+\pi(a_t|s_t) \propto \exp\left(-\mathcal{G}(a_t, s_t|Q^*)\right)
+$$
+</center>
+where
+<center>
+$$
+\mathcal{G}(a_t, s_t|Q^*) \triangleq \mathbb{E}_{Q^*(o_{\tau+1:T}, s_{\tau+1:T}|s_t, a_t)}[\log Q^*(s_{\tau+1:T}, a_{\tau+1:T}) - \log \tilde{P}(o_{\tau+1:T}, s_{\tau+1:T}, a_{\tau+1:T}|s_t, a_t)]
+$$
+</center>
+we obtain a similar optimal policy where the posterior over actions roughly corresponds to the prior:
+<center>
+$$
+Q^*(a_t|s_t) \propto \exp\left(-\mathcal{G}(a_t, s_t|Q^*) - \mathbb{E}_{Q^{*}(s_{t-1}, a_{t-1})}[\mathcal{F}(o_{t}, Q^*|a_{t-1})]\right)
+$$
+</center>
+Familiar readers might recognize a lot of similarity between this factorization and standard notations in RL. This is indeed the factorization underlying most [deep RL-based implementations of active inference](https://arxiv.org/abs/2207.06415). 
+
+To see the connection with "optimal control without cost function", let us define a new state variable $$\tilde{s} = [s, a]$$ which is the concatenation of the original state and action variables. We can then rewrite the factorized generative model as:
+<center>
+$$
+P(o_{1:\tau}, \tilde{s}_{1:T}) = \prod_{t=1}^{\tau}P(o_t|\tilde{s}_t)\prod_{t=1}^{T}P(\tilde{s}_t|\tilde{s}_{t-1})
+$$
+</center>
+where $$P(o_t|\tilde{s}_t) = P(o_t|s_t, a_t) = P(o_t|s_t)$$. We have visualized this and the 2012 model in the figure in the previous section.
+
+Under this representation, **we dismantle the conventional treatment of states and actions as separate objects and instead understand actions as just a subset of states which we can directly affect or control if we put our mind to**. In this way, we realize active inference's motivation to unify both perception and control as hidden states inference, except that inference of active states is minimally affected by observations but rather largely modulated by the prior. But this is exactly the vision of active inference: actions are just **precise** predictions.
+
 ## Closing thoughts
 
-We started with a motivation to understand whether active inference can help resolve the objective mismatch problem in RL agents by formulating a *single* objective function for perception and control. Both versions of active inference aim to unify perception and control under a single objective of minimizing free energy, and yet they still seem to resemble the two-stage perception-control paradigm. It should be noted that active inference is an evolving framework. But more importantly, when we talk about "single objective", what is meant in the active inference context seems to be different from what is meant in the RL context. It would be of interest to clarify what exactly is meant by "objective mismatch" and what do we ultimately want in enactive agents. 
+We started with a motivation to understand how active inference formulates a **single** objective function for perception and control, which may in turn address the objective mismatch problem in RL. We have seen that active inference adopts a very perception-centric approach to the development of the unified objective as opposed to the control-centric approach in RL. 
 
-## Code examples
-You can checkout my implementation of the old version (i.e., optimal control without cost) [here](https://www.kaggle.com/code/runway/active-inference-optimal-control-without-cost) and a slightly variation of the new version [here](https://www.kaggle.com/code/runway/active-inference-learning-action-oriented-models) (which implements the [action oriented model paper](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007805)).
+On the surface, both versions of active inference appear to unify perception and control under a single objective of minimizing free energy, and yet the devil is in the detail of the generative model. Given the intricacies of the prior design choices, one may ask whether active inference still conforms to the mismatched perception-control paradigm, where the perception model is trained to predict environment observations and the action selection policy is optimized for some other criteria. I think the key here is that among all possible prior design choices, there is only a subset that is correct. As I discuss in [another post](https://rw422scarlet.github.io/2023/09/07/rationalize-efe.html), while the EFE objective may seem ad-hoc, it actually gives rise to a key property which makes agents robust to model error. In this sense, the EFE objective can be seen as a type of distribution correction objective (and can in fact be derived from this perspective). This further aligns the perception-centric approach with the control-centric approach in RL. 
+
+## Other resources and code examples
+Most of the contents in this post were taken from [my thesis](https://www.proquest.com/openview/34741b4f77c914241b634e5723891d29/1?pq-origsite=gscholar&cbl=18750&diss=y) and previous open sourced materials. In section 2.4.3 of the thesis, I gave an attempt to connect EFE and expected value and tried to understand the implicit assumptions made by EFE (although the connections were never validated). In section 2.4.5, I gave a brief overview of the history and neuroscience motivations behind active inference.
+
+You can checkout my implementation of the old version (i.e., optimal control without cost) [here](https://www.kaggle.com/code/runway/active-inference-optimal-control-without-cost) and a slightly variation of the new version [here](https://www.kaggle.com/code/runway/active-inference-learning-action-oriented-models) (which implements the [action oriented model paper](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007805)). Both notebooks contain explanation of the formulations and experiments on concrete examples.
 
 ## Appendix
 
