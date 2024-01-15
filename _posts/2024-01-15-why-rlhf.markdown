@@ -1,0 +1,136 @@
+---
+layout: post
+title:  "Why do we need RLHF? Imitation,  Inverse RL, and the role of reward"
+date:   2024-01-15 00:00:00 -0000
+---
+
+Amidst the wide application of reinforcement learning from human feedback (RLHF), it is easy to forget (or rather ignore) why do we need RLHF in the first place? 
+
+At the risk of repeating the obvious, RLHF has a conceptually simple pipeline:
+1. Initialize with a decent quality generative model (e.g., via pretraining on large and diverse dataset)
+2. Fine-tune the initial model on a (multi) task-specific dataset via supervised learning
+3. Obtain a reward model from human comparisons of model outputs
+4. Train the model to maximize reward without deviating too much from the fine-tuned model via reinforcement learning
+
+If the second step, also known as supervised fine-tuning (SFT), does sufficiently well, then can we just ditch reward modeling and RL at all?
+
+To better understand the goal of RLHF, I reflected on the related paradigm of [inverse RL (IRL)](https://thegradient.pub/learning-from-humans-what-is-inverse-reinforcement-learning/), which learns a reward function from human demonstrations rather than comparisons, and I took a deep dive into the roles of reward and RL in both frameworks. **As a preview, both IRL and RLHF can alleviate [exposure bias](https://arxiv.org/abs/1511.06732), a mismatch between training and testing conditions that potentially underlies degenerate behaviors in SFT models. However, the advantage of RLHF is the possibility of outperforming the dataset. Nevertheless, the effect of the latter is unclear (perhaps dubious?) in practice.**
+
+I was originally thinking about the goal of RLHF as a way to understand the role of reward in RLHF, especially because the [DPO](https://arxiv.org/abs/2305.18290) family algorithms are removing reward function from the game. But [this tweet](https://twitter.com/mcaleerstephen/status/1746295354797011396?s=12&t=YjEgAUvvtbZGMZI9ZFto2w) suggests that there are many other people out there thinking about the same question. So I decided to make this topic a post of its own. 
+
+(I will start with a brief recap of IRL and RLHF. Familiar readers can safely skip.)
+<center>
+$$
+\begin{array}{cc}
+\hline
+&\text{Method} & \text{Can correct exposure bias?} & \text{Can outperform data?} \\
+\hline
+& \text{SFT} & \text{No} & \text{No} \\
+& \text{IRL} & \text{Yes} & \text{No} \\
+& \text{RLHF} & \text{Yes} & \text{Yes} \\
+\hline
+\end{array}
+$$
+</center>
+## A brief recap of IRL
+Before RLHF established the binary comparison approach to learning from human feedback, the basic approach was just to imitate human behavior (a.k.a., imitation learning). To ensure we learn good behavior, the humans who demonstrate the behavior must be experts at the desired task. Given a dataset of expert behavior $$\mathcal{D} =\{(s, a)\}$$, imitation learning searches for a policy $$\hat{\pi}$$ which maximizes the likelihood of the dataset:
+<center>
+$$
+\max_{\hat{\pi}} \quad \mathbb{E}_{(s, a) \sim \mathcal{D}}[\log \hat{\pi}(a|s)]
+$$
+</center>
+In the setting of language modeling, if we interpret the state $$s$$ as past tokens (a.k.a., context) and action $$a$$ as the next token, the imitation learning objective is equivalent to the maximum likelihood objective used for training autoregressive language models. 
+
+Inverse RL can be seen as a special class of imitation learning algorithm which makes an additional assumption on the structure of the learner policy $$\hat{\pi}$$ that it is an optimal policy with respect to a pair of reward function $$R(s, a)$$ and environment dynamics $$P(s'|s, a)$$, where the latter is often assumed to be given. IRL instead searches for a reward function under which the optimal policy maximizes the likelihood of the dataset:
+<center>
+$$
+\begin{align}
+\max_{R} \quad& \mathbb{E}_{(s, a) \sim \mathcal{D}}[\log \hat{\pi}(a|s; R)] \\
+\text{s.t.} \quad& \hat{\pi} = \arg\max_{\pi}\mathbb{E}_{\pi, P}\left[\sum_{t=0}^{\infty}\gamma^{t}R(s_t, a_t)\right]
+\end{align}
+$$
+</center>
+
+## A brief recap of RLHF
+While RLHF was originally introduced for sequential decision making tasks (i.e., [locomotion control](https://arxiv.org/abs/1706.03741)), we will introduce the non-sequential formulation (i.e., contextual bandit; see [this paper](https://arxiv.org/abs/2311.00168)), which is used by most recent language models. 
+
+In this setting, we have a dataset of labeled pairs of states and actions $$\mathcal{D} = \{(s, a_{w}, a_{l})\}$$, where the state $$s$$ represents a context or instruction (i.e., a sequence of tokens) and action $$a$$ represents a completion or response (i.e., also a sequence of tokens). The subscripts $$w, l$$ represent whether the action is preferred ($$w$$) or dispreferred ($$l$$) by the labeler. RLHF assumes that the preferences are generated from the following distribution parameterized by a reward function $$R(s, a)$$:
+<center>
+$$
+P(a_{w} \succ a_l|s; R) = \frac{\exp(R(s, a_w))}{\exp(R(s, a_w)) + \exp(R(s, a_l))}
+$$
+</center>
+which allows us to estimated the reward function from data using maximum likelihood estimation:
+<center>
+$$
+\max_{R} \quad \mathbb{E}_{(s, a_w, a_l) \sim \mathcal{D}}[\log P(a_{w} \succ a_l|s; R)]
+$$
+</center>
+Subsequently, a policy is trained to maximize the estimated reward. Yet, most RLHF pipelines have opted to maximize the reward under the constraint that the learner policy does not deviate significantly from the pretrained policy $$\pi_{\text{ref}}$$:
+<center>
+$$
+\max_{\pi}\quad \mathbb{E}_{s \sim \mathcal{D}, a \sim \pi(\cdot|s)}[R(s, a) -\beta D_{KL}(\pi(a|s) || \pi_{\text{ref}}(a|s))]
+$$
+</center>
+where the KL divergence $$D_{KL}$$ measures the difference between the learner policy and the reference policy and $$\beta$$ controls the strength of the constraint. 
+
+![](/assets/2024-01-15-why-rlhf/irl_vs_rlhf.png)
+Comparison of IRL and RLHF process.
+
+## SFT headache: Exposure bias and neural text degeneration
+It is by now well documented that language models trained with supervised learning often lead to degenerate behavior, including outputting gibberish, repetitions, unnatural responses, etc. These phenomena are often attributed to a mismatch between the training objective and the evaluation process: **while models are trained with the dataset as inputs, they are tested on self-generated inputs, which may have a different distribution from the dataset**. In other words, there is an **exposure bias** where the models are only ever exposed to the data distribution and thus don't know what to do elsewhere (see analysis in [this paper](https://arxiv.org/abs/2311.01388)).
+
+Exposure bias is a well-studied problem in the imitation learning literature: since we know nothing about what to do outside the data distribution, any mistake we make during deployment drives us further and further away. A classic [imitation learning result](https://arxiv.org/abs/1011.0686) shows that if the learner policy incurs $$\epsilon_{\hat{\pi}}$$ error on the training set, this error can compound quadratically in the worst case (i.e., $$\mathcal{O}(T^2\epsilon_{\hat{\pi}})$$; where $$T$$ is the time horizon). In robotics control settings (e.g., driving simulation), we often see two types of behavior as a result of this: 
+1. The longer a car drives the more it deviates from the course 
+2. The driving policy tends to repeat its previous action (see [this paper](https://arxiv.org/abs/1905.11979)) 
+
+The simplest way to correct exposure bias is just to expose the learner policy to its own generated inputs and provide new labels for those examples (a.k.a., [Dagger](https://arxiv.org/abs/1011.0686)). This method can reduce the error compounding rate to linear (i.e., $$\mathcal{O}(T\epsilon_{\hat{\pi}})$$). 
+
+In language models, exposure bias is slightly more nuanced than in the robotics setting since they typically don't deviate from the course completely, and when they repeat, they tend to repeat certain patterns (sequence of tokens) as opposed to just the previous token. There is currently no consensus on the cause of these behaviors. For example, [this study](https://arxiv.org/abs/1904.09751) found the probability of a repeated phrase increases with each repetition, and [this study](https://arxiv.org/abs/2012.14660) hypothesizes that repetition happens because the learned Markov chain of tokens tends to have loops. [This study](https://arxiv.org/abs/1905.10617) suggests that the language models might have self-correction capabilities so that their deviations are not as incremental and catastrophic as in robotics. Nevertheless, it is a major problem even in state-of-the-art models (e.g., see snippets from the [OpenAI report](https://arxiv.org/abs/2203.02155) below; left column). 
+![](/assets/2024-01-15-why-rlhf/openai_report_snippet_1.png)
+![](/assets/2024-01-15-why-rlhf/openai_report_snippet_2.png)
+![](/assets/2024-01-15-why-rlhf/openai_report_snippet_3.png)
+Example responses from the [OpenAI report](https://arxiv.org/abs/2203.02155), showing signs of exposure bias.
+
+A slightly more subtle point is whether exposure bias potentially underlies failure to follow instructions and hallucination. [This paper](https://arxiv.org/abs/2305.13534) shows that language models can often correctly recognize the false justifications they give to an incorrect response when these justifications are provided separately, in some sense alluding to a combination of distribution shift and self-correction in this type of hallucination. Instruction following is a bit more mysterious because it seems to require some level of task identification and adaption to unseen tasks. It has been widely demonstrated that [language models are few-shot learners](https://arxiv.org/abs/2005.14165) and this capability resulting from supervised learning on internet scale data can be understood as [implicit Bayesian inference](https://arxiv.org/abs/2111.02080). So it is not immediately obvious how the lack of such capability can be related to exposure bias, and there are very few studies. However, [this paper](https://arxiv.org/abs/2306.13649) shows that exposing the model to self-generated behavior in knowledge distillation from a large model leads to improved instruction following compared to supervised fine-tuning. 
+
+## The goals of IRL and RLHF and the role of reward
+It is clear that the goal of IRL is to imitate expert behavior, but why bother learning a reward function? Learning a reward function in imitation learning can have many motivations. For example, one can interpret the learned reward function to understand the motivation behind the expert agent's behavior, or, the learned reward function can be used to train an optimal policy in an alternative environment with different dynamics. But a key reason for our discussion is that it helps **alleviate exposure bias by extrapolating to states outside the data distribution**, because we know the environment dynamics and assume the expert is reward-optimal. Underneath the hood, IRL rolls out the learner policy in the dynamics to check whether self-generated behavior matches with expert behavior and lower the reward on out-of-distribution behavior (see [this paper](https://arxiv.org/abs/2203.11409)). In other words, the reward function leverages knowledge of environment dynamics to provide feedback to the learner policy in unseen states.
+
+The goal of RLHF is a bit more difficult to decipher; in relation to IRL, we may guess whether it is also trying to reduce exposure bias and imitate expert behavior. By exposing to its own behavior during RL, it is reasonable to think that RLHF reduces exposure bias, assuming the learned reward function captures the desired behavior. In iterated RLHF, the reward function is further retrained periodically (e.g., every week in the [Llama2 paper](https://arxiv.org/abs/2307.09288) and whenever the RL process is done in the [original RLHF paper](https://arxiv.org/abs/1706.03741)). However, RLHF was never meant to be an imitation algorithm: the original RLHF paper defines it as an algorithm that **allows non-experts to define the goals of an agent**, because demonstrating optimal behavior may be difficult. In other words, **the goal of RLHF is to outperform demonstrations**. 
+
+A key result from [this paper](https://arxiv.org/abs/1907.03976) shows that whether RLHF can outperform demonstrations in practice depends on:
+1. Whether the learned reward is sufficiently accurate
+2. Whether the demonstrations are sufficiently suboptimal 
+
+The former is difficult to show but highly unlikely given known effects of [reward model exploitation/over-optimization](https://arxiv.org/abs/2210.10760), the latter is highly nuanced given the human factors involved, but it is clear that extensive efforts are devoted to developing unified standards for labeling and curating fine-tuning datasets (e.g., see descriptions in the [OpenAI report](https://arxiv.org/abs/2203.02155)). If we look at the following figure from the the [Llama2 paper](https://arxiv.org/abs/2307.09288) , the reward distribution of the SFT model (i.e., Annotation) is already approaching the reward distributions of the RLHF models and far exceeding the rewards of the pretrained model (i.e., Mix). It is thus possible that a lot of gains of RLHF come from merely mitigating exposure bias. 
+![](/assets/2024-01-15-why-rlhf/llama_2_paper_reward_distribution.png)
+Comparison of reward distributions achieved by different models from the [Llama2 paper](https://arxiv.org/abs/2307.09288). SFT (Annotation) already achieves comparable rewards to RLHF and far exceeds the pretrained model (Mix).
+
+## Why not replace SFT with IRL?
+There is in fact [existing work](https://arxiv.org/abs/2306.05426) that replaces SFT with IRL, which smartly incorporates an additional backspace operation to match with expert data more efficiently. However, a major issue with IRL is that, thanks to its more end-to-end-ish reward and policy learning pipeline, it requires repeated sampling of self-generated behavior to update the reward function, which can be quite expensive for large models. RLHF, on the other hand, takes a modular approach to reward and policy learning, where the reward function only needs to be trained once (at least per RLHF session). However, the iterative updates of reward and policy potentially make IRL more robust to reward model exploitation (see [an argument](https://www.arxiv.org/abs/1910.05852) based on GAN training), a phenomena which plagues RLHF. 
+
+Given that the role of reward is relatively well-understood in IRL but less so in RLHF (especially in the DPO family) and the previous speculation on the relative importance of exposure bias vs exceeding human performance in practical RLHF, it is reasonable to expect cross pollination between the two paradigms soon. 
+
+### References
+1. [Ng, A. Y., & Russell, S. (2000, June). Algorithms for inverse reinforcement learning. In _Icml_ (Vol. 1, p. 2).](https://ai.stanford.edu/~ang/papers/icml00-irl.pdf)
+2. [Ranzato, M. A., Chopra, S., Auli, M., & Zaremba, W. (2015). Sequence level training with recurrent neural networks. _arXiv preprint arXiv:1511.06732_.](https://arxiv.org/abs/1511.06732)
+3. [Rafailov, R., Sharma, A., Mitchell, E., Ermon, S., Manning, C. D., & Finn, C. (2023). Direct preference optimization: Your language model is secretly a reward model. _arXiv preprint arXiv:2305.18290_.](https://arxiv.org/abs/2305.18290)
+4. [Christiano, P. F., Leike, J., Brown, T., Martic, M., Legg, S., & Amodei, D. (2017). Deep reinforcement learning from human preferences. _Advances in neural information processing systems_, _30_.](https://arxiv.org/abs/1706.03741)
+5. [Lambert, N., & Calandra, R. (2023). The Alignment Ceiling: Objective Mismatch in Reinforcement Learning from Human Feedback. _arXiv preprint arXiv:2311.00168_.](https://arxiv.org/abs/2311.00168)
+6. [Jarrett, D., Bica, I., & van der Schaar, M. (2021). Time-series generation by contrastive imitation. _Advances in Neural Information Processing Systems_, _34_, 28968-28982.](https://arxiv.org/abs/2311.01388)
+7. [Ross, S., Gordon, G., & Bagnell, D. (2011, June). A reduction of imitation learning and structured prediction to no-regret online learning. In _Proceedings of the fourteenth international conference on artificial intelligence and statistics_ (pp. 627-635). JMLR Workshop and Conference Proceedings.](https://arxiv.org/abs/1011.0686)
+8. [Holtzman, A., Buys, J., Du, L., Forbes, M., & Choi, Y. (2019). The curious case of neural text degeneration. _arXiv preprint arXiv:1904.09751_.](https://arxiv.org/abs/1904.09751)
+9. [Fu, Z., Lam, W., So, A. M. C., & Shi, B. (2021, May). A theoretical analysis of the repetition problem in text generation. In _Proceedings of the AAAI Conference on Artificial Intelligence_ (Vol. 35, No. 14, pp. 12848-12856).](https://arxiv.org/abs/2012.14660)
+10. [He, T., Zhang, J., Zhou, Z., & Glass, J. (2019). Exposure bias versus self-recovery: Are distortions really incremental for autoregressive text generation?. _arXiv preprint arXiv:1905.10617_.](https://arxiv.org/abs/1905.10617)
+11. [Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, C., Mishkin, P., ... & Lowe, R. (2022). Training language models to follow instructions with human feedback. _Advances in Neural Information Processing Systems_, _35_, 27730-27744.](https://arxiv.org/abs/2203.02155)
+12. [Zhang, M., Press, O., Merrill, W., Liu, A., & Smith, N. A. (2023). How language model hallucinations can snowball. _arXiv preprint arXiv:2305.13534_.](https://arxiv.org/abs/2305.13534)
+13. [Arora, K., Asri, L. E., Bahuleyan, H., & Cheung, J. C. K. (2022). Why Exposure Bias Matters: An Imitation Learning Perspective of Error Accumulation in Language Generation. _arXiv preprint arXiv:2204.01171_.](https://arxiv.org/abs/2204.01171)
+14. [Brown, T., Mann, B., Ryder, N., Subbiah, M., Kaplan, J. D., Dhariwal, P., ... & Amodei, D. (2020). Language models are few-shot learners. _Advances in neural information processing systems_, _33_, 1877-1901.](https://arxiv.org/abs/2005.14165)
+15. [Xie, S. M., Raghunathan, A., Liang, P., & Ma, T. (2021). An explanation of in-context learning as implicit bayesian inference. _arXiv preprint arXiv:2111.02080_.](https://arxiv.org/abs/2111.02080)
+16. [Agarwal, R., Vieillard, N., Stanczyk, P., Ramos, S., Geist, M., & Bachem, O. (2023). GKD: Generalized Knowledge Distillation for Auto-regressive Sequence Models. _arXiv preprint arXiv:2306.13649_.](https://arxiv.org/abs/2306.13649)
+17. [Touvron, H., Martin, L., Stone, K., Albert, P., Almahairi, A., Babaei, Y., ... & Scialom, T. (2023). Llama 2: Open foundation and fine-tuned chat models. _arXiv preprint arXiv:2307.09288_.](https://arxiv.org/abs/2307.09288)
+18. [Brown, D. S., Goo, W., & Niekum, S. (2020, May). Better-than-demonstrator imitation learning via automatically-ranked demonstrations. In _Conference on robot learning_ (pp. 330-359). PMLR.](https://arxiv.org/abs/1907.03976)
+19. [Gao, L., Schulman, J., & Hilton, J. (2023, July). Scaling laws for reward model overoptimization. In _International Conference on Machine Learning_ (pp. 10835-10866). PMLR.](https://arxiv.org/abs/2210.10760)
+20. [Cundy, C., & Ermon, S. (2023). SequenceMatch: Imitation Learning for Autoregressive Sequence Modelling with Backtracking. _arXiv preprint arXiv:2306.05426_.](https://arxiv.org/abs/2306.05426)
+21. [Schäfer, F., Zheng, H., & Anandkumar, A. (2019). Implicit competitive regularization in GANs. _arXiv preprint arXiv:1910.05852_.](https://www.arxiv.org/abs/1910.05852)
