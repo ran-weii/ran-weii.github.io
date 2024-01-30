@@ -22,8 +22,8 @@ title: LatentObservations/潜在观察
 # email: your-email@example.com
 description: >- # this means to ignore newlines until "baseurl:"
 baseurl: "" # the subpath of your site, e.g. /blog
-url: "https://github.com/rw422scarlet/rw422scarlet.github.io" # the base hostname & protocol for your site, e.g. http://example.com
-github_username:  rw422scarlet
+url: "https://github.com/ran-weii/ran-weii.github.io" # the base hostname & protocol for your site, e.g. http://example.com
+github_username:  ran-weii
 linkedin_username: wei-ran
 twitter_username: _RanW_
 
