@@ -3,11 +3,24 @@ layout: page
 title: About
 permalink: /about/
 ---
+This site is the equivalence of my [Substack site](https://latentobservations.substack.com/) but offers a slightly better math reading experience. 
 
-Welcome to LatentObservations! 
+## Niche topics in ML and CogSci
+LatentObservations aims to raise public awareness on niche topics in machine learning and cognitive science. Although the nicheness of a topic is completely determined by my weird research taste, currently it tends to be biased towards Bayesian approaches to ML and CogSci. 
 
-This blog is dedicated to a wide range of topics in data science, machine learning, optimization, cognitive science, human-computer interaction, and many others, which I consider to be not mainstream or obvious. In other words, these **observations** are **latent**, and thus the name of the blog. I hope the posts are as paradoxical and non-orthodox as the blog name and in the end a bit enlightening. 
+![](/assets/logo/latent_observations_logo.png)
 
-The posts will be constantly updated, so don't stress out if there is any error. Please find my contact below if you like the posts, have comments, questions, suggestions, or simply want to chat and connect. 
+As an attest to the nicheness of the topics, the blog name LatentObservations was created as a contradiction on purpose: 
+* In Bayesian methods observations are never latent. 
+* Observed variables in Bayesian networks are by convention colored in gray, while latent variables are colored in white.
 
-Note: this blog represents my own opinions and unrelated to any professional affiliations I might be associated with.
+The intent here is to share observations that are not obvious or mainstream.
+
+## Publication frequency
+Historically, new posts have been published every 1 to 2 months. Subscribe to my [Substack site](https://latentobservations.substack.com/) to get automatic notification of new posts!
+
+## Supporting materials
+Blog contents are sometimes supported with experiments on my [Kaggle site](https://www.kaggle.com/runway/code).
+
+## Disclosure
+Blog contents are unrelated to any professional associations I may have.
