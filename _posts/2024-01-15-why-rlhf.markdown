@@ -74,8 +74,9 @@ $$
 </center>
 where the KL divergence $$D_{KL}$$ measures the difference between the learner policy and the reference policy and $$\beta$$ controls the strength of the constraint. 
 
-![](/assets/2024-01-15-why-rlhf/irl_vs_rlhf.png)
-Comparison of IRL and RLHF process.
+| ![](/assets/2024-01-15-why-rlhf/irl_vs_rlhf.png) |
+|:--:| 
+| *Comparison of IRL and RLHF process.* |
 
 ## SFT headache: Exposure bias and neural text degeneration
 It is by now well documented that language models trained with supervised learning often lead to degenerate behavior, including outputting gibberish, repetitions, unnatural responses, etc. These phenomena are often attributed to a mismatch between the training objective and the evaluation process: **while models are trained with the dataset as inputs, they are tested on self-generated inputs, which may have a different distribution from the dataset**. In other words, there is an **exposure bias** where the models are only ever exposed to the data distribution and thus don't know what to do elsewhere (see analysis in [this paper](https://arxiv.org/abs/2311.01388)).
@@ -87,10 +88,12 @@ Exposure bias is a well-studied problem in the imitation learning literature: si
 The simplest way to correct exposure bias is just to expose the learner policy to its own generated inputs and provide new labels for those examples (a.k.a., [Dagger](https://arxiv.org/abs/1011.0686)). This method can reduce the error compounding rate to linear (i.e., $$\mathcal{O}(T\epsilon_{\hat{\pi}})$$). 
 
 In language models, exposure bias is slightly more nuanced than in the robotics setting since they typically don't deviate from the course completely, and when they repeat, they tend to repeat certain patterns (sequence of tokens) as opposed to just the previous token. There is currently no consensus on the cause of these behaviors. For example, [this study](https://arxiv.org/abs/1904.09751) found the probability of a repeated phrase increases with each repetition, and [this study](https://arxiv.org/abs/2012.14660) hypothesizes that repetition happens because the learned Markov chain of tokens tends to have loops. [This study](https://arxiv.org/abs/1905.10617) suggests that the language models might have self-correction capabilities so that their deviations are not as incremental and catastrophic as in robotics. Nevertheless, it is a major problem even in state-of-the-art models (e.g., see snippets from the [OpenAI report](https://arxiv.org/abs/2203.02155) below; left column). 
-![](/assets/2024-01-15-why-rlhf/openai_report_snippet_1.png)
-![](/assets/2024-01-15-why-rlhf/openai_report_snippet_2.png)
-![](/assets/2024-01-15-why-rlhf/openai_report_snippet_3.png)
-Example responses from the [OpenAI report](https://arxiv.org/abs/2203.02155), showing signs of exposure bias.
+
+| ![](/assets/2024-01-15-why-rlhf/openai_report_snippet_1.png) |
+| ![](/assets/2024-01-15-why-rlhf/openai_report_snippet_2.png) |
+| ![](/assets/2024-01-15-why-rlhf/openai_report_snippet_3.png) |
+|:--:| 
+| *Example responses from the [OpenAI report](https://arxiv.org/abs/2203.02155), showing signs of exposure bias.* |
 
 A slightly more subtle point is whether exposure bias potentially underlies failure to follow instructions and hallucination. [This paper](https://arxiv.org/abs/2305.13534) shows that language models can often correctly recognize the false justifications they give to an incorrect response when these justifications are provided separately, in some sense alluding to a combination of distribution shift and self-correction in this type of hallucination. Instruction following is a bit more mysterious because it seems to require some level of task identification and adaption to unseen tasks. It has been widely demonstrated that [language models are few-shot learners](https://arxiv.org/abs/2005.14165) and this capability resulting from supervised learning on internet scale data can be understood as [implicit Bayesian inference](https://arxiv.org/abs/2111.02080). So it is not immediately obvious how the lack of such capability can be related to exposure bias, and there are very few studies. However, [this paper](https://arxiv.org/abs/2306.13649) shows that exposing the model to self-generated behavior in knowledge distillation from a large model leads to improved instruction following compared to supervised fine-tuning. 
 
@@ -104,8 +107,10 @@ A key result from [this paper](https://arxiv.org/abs/1907.03976) shows that whet
 2. Whether the demonstrations are sufficiently suboptimal 
 
 The former is difficult to show but highly unlikely given known effects of [reward model exploitation/over-optimization](https://arxiv.org/abs/2210.10760), the latter is highly nuanced given the human factors involved, but it is clear that extensive efforts are devoted to developing unified standards for labeling and curating fine-tuning datasets (e.g., see descriptions in the [OpenAI report](https://arxiv.org/abs/2203.02155)). If we look at the following figure from the the [Llama2 paper](https://arxiv.org/abs/2307.09288) , the reward distribution of the SFT model (i.e., Annotation) is already approaching the reward distributions of the RLHF models and far exceeding the rewards of the pretrained model (i.e., Mix). It is thus possible that a lot of gains of RLHF come from merely mitigating exposure bias. 
-![](/assets/2024-01-15-why-rlhf/llama_2_paper_reward_distribution.png)
-Comparison of reward distributions achieved by different models from the [Llama2 paper](https://arxiv.org/abs/2307.09288). SFT (Annotation) already achieves comparable rewards to RLHF and far exceeds the pretrained model (Mix).
+
+| ![](/assets/2024-01-15-why-rlhf/llama_2_paper_reward_distribution.png) |
+|:--:| 
+| *Comparison of reward distributions achieved by different models from the [Llama2 paper](https://arxiv.org/abs/2307.09288). SFT (Annotation) already achieves comparable rewards to RLHF and far exceeds the pretrained model (Mix).* |
 
 ## Why not replace SFT with IRL?
 There is in fact [existing work](https://arxiv.org/abs/2306.05426) that replaces SFT with IRL, which smartly incorporates an additional backspace operation to match with expert data more efficiently. However, a major issue with IRL is that, thanks to its more end-to-end-ish reward and policy learning pipeline, it requires repeated sampling of self-generated behavior to update the reward function, which can be quite expensive for large models. RLHF, on the other hand, takes a modular approach to reward and policy learning, where the reward function only needs to be trained once (at least per RLHF session). However, the iterative updates of reward and policy potentially make IRL more robust to reward model exploitation (see [an argument](https://www.arxiv.org/abs/1910.05852) based on GAN training), a phenomena which plagues RLHF. 

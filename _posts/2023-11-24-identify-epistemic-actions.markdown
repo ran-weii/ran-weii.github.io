@@ -19,9 +19,9 @@ Below, I cast sequential decision-making under uncertainty within the Partially 
 
 To address this ambiguity, I look to an old concept called the [expected value of perfect information](https://en.wikipedia.org/wiki/Expected_value_of_perfect_information), which quantifies how much one is willing to pay for the uncertainty being resolved so that fully informed decisions can be made. This decouples exploration and exploitation in the analysis and provides us a measure of the epistemic value of an action. Given that in different stages of the sequential decision-making process, the epistemic and pragmatic (treated as the opposite to epistemic in this post) values may be different and they generally do not sum up to the same constant, it's best that they are understood as two different dimensions rather than opposing directions in the same dimension. This draws an interesting (but apologetically hand-wavy) parallel to the concept of valence and arousal in quantifying emotional values.
 
-![](/assets/2023-11-24-identify-epistemic-actions/epistemic_actions.png)
-
-[HF stable diffusion 2.1](https://huggingface.co/spaces/stabilityai/stable-diffusion): "surrealist painting of optimal tradeoff of exploration and exploitation in sequential decision making".
+| ![](/assets/2023-11-24-identify-epistemic-actions/epistemic_actions.png) | 
+|:--:| 
+| *[HF stable diffusion 2.1](https://huggingface.co/spaces/stabilityai/stable-diffusion): "surrealist painting of optimal tradeoff of exploration and exploitation in sequential decision making".* |
 
 ## Two types of POMDPs and the role of observability
 The problem of sequential decision-making under uncertainty is very well captured by the mathematical framework of Partially Observable Markov Decision Processes (POMDP). Very briefly, in POMDPs, agent action $$a \in \mathcal{A}$$ causes the environment state $$s \in \mathcal{S}$$ to transition from one time step to the next through a distribution $$P(s_{t+1}\vert s_t, a_t)$$. The quality of actions are scored by a reward function $$R(s, a)$$ either externally given or intrinsic. The agent cannot directly observe the true environment state but a signal $$o \in \mathcal{O}$$ generated from $$P(o\vert s)$$. The partial observability is the reason why epistemic behavior is important, but exactly how it is important depends on the structure of the POMDP environment, namely the actual observation and transition distributions. 

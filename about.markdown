@@ -6,7 +6,7 @@ permalink: /about/
 This site is the equivalence of my [Substack site](https://latentobservations.substack.com/) but offers a slightly better math reading experience. 
 
 ## Niche topics in ML and CogSci
-LatentObservations aims to raise public awareness on niche topics in machine learning and cognitive science. Although the nicheness of a topic is completely determined by my weird research taste, currently it tends to be biased towards Bayesian approaches to ML and CogSci. 
+**LatentObservations** aims to raise public awareness on niche topics in machine learning and cognitive science. Although the nicheness of a topic is completely determined by my weird research taste, currently it tends to be biased towards Bayesian approaches to ML and CogSci. 
 
 ![](/assets/logo/latent_observations_logo.png)
 

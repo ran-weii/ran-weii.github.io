@@ -38,8 +38,9 @@ $$
 </center>
 where $$P(\theta)$$ is a prior over likely agent parameters. Note that the agent's model $$\hat{P}_{\theta}$$ may not be equal to the true environment; the agent is only acting rationally with respect to it's own model of the environment. This is the key property that leads to flexible inference of nuanced humans. By accounting for the possibility of biased world model, we have the potential to estimate their reward more accurately. It should be noted that the prior also plays a crucial role to avoid degenerate inference, but that is a more nuanced discussion (see [this paper](https://arxiv.org/abs/1712.05812)). Lastly, we can easily account for individual difference under the Bayesian framework using hierarchical models. 
 
-![](/assets/2023-05-27-btom-rlhf/btom_rlhf.png)
-Comparison of BTOM for IRL and RLHF.
+| ![](/assets/2023-05-27-btom-rlhf/btom_rlhf.png) |
+|:--:| 
+| *Comparison of BTOM for IRL and RLHF.* |
 
 ## Bayesian Theory of Mind for RLHF
 Let's consider a simple RLHF scenario where we present to a human evaluator two trajectories $$\tau_{a}$$ and $$\tau_b$$ and we ask the evaluator to choose a preferred one. This setting can be more advantageous than IRL or Bayesian Theory of Mind because the human does not need to demonstrate optimal behavior which requires substantial skills but simply choose among automatically generated ones which can be produced endlessly. 

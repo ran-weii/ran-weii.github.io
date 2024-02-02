@@ -58,8 +58,9 @@ $$
 </center>
 where $$P(\mu|x_{1:t})$$ is the posterior over $$\mu$$ after observing all past signals $$x_{1:t}$$ - a "memory" of all past information.
 
-![](/assets/2023-06-23-meta-learning-uniqueness/meta_learning_bayesian_inference.png)
-Illustration of Bayesian learning via inference and meta learning via prediction.
+| ![](/assets/2023-06-23-meta-learning-uniqueness/meta_learning_bayesian_inference.png) |
+|:--:| 
+| *Illustration of Bayesian learning via inference and meta learning via prediction.* |
 
 We will use the proof at the end of [this paper](https://arxiv.org/abs/2304.06729). The idea is to show that the posterior predictive achieves higher likelihood than any other reference distribution $$r(x_{t+1}|x_{1:t})$$:
 <center>
